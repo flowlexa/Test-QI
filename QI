@@ -1,0 +1,600 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Quiz QI (estimation ludique)</title>
+  <style>
+    :root { --bg:#0b1020; --card:#121a33; --muted:#aab3d4; --text:#eef1ff; --accent:#7aa2ff; --ok:#66d9a9; --bad:#ff7a7a; }
+    * { box-sizing:border-box; }
+    body{
+      margin:0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Noto Sans";
+      background: radial-gradient(1200px 600px at 10% 0%, #16204a 0%, var(--bg) 55%) fixed;
+      color: var(--text);
+    }
+    .wrap{ max-width: 980px; margin: 0 auto; padding: 28px 16px 80px; }
+    header{
+      display:flex; flex-wrap:wrap; gap:12px; align-items:flex-end; justify-content:space-between; margin-bottom: 18px;
+    }
+    h1{ margin:0; font-size: clamp(22px, 3.2vw, 34px); letter-spacing:.2px; }
+    .pill{
+      display:inline-flex; gap:10px; align-items:center; padding:8px 12px; border-radius:999px;
+      background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.10);
+      color: var(--muted); font-size: 13px;
+    }
+    .grid{ display:grid; grid-template-columns: 1fr; gap: 12px; }
+    .card{
+      background: rgba(18,26,51,.86);
+      border: 1px solid rgba(255,255,255,.10);
+      border-radius: 18px;
+      padding: 16px 14px;
+      box-shadow: 0 18px 60px rgba(0,0,0,.35);
+    }
+    .card h2{ margin:0 0 6px 0; font-size: 16px; color: #d7ddff; }
+    .sub{ color: var(--muted); font-size: 13px; line-height: 1.35; margin: 0 0 10px 0; }
+    .qhead{
+      display:flex; gap:10px; align-items:flex-start; justify-content:space-between; margin-bottom: 10px;
+    }
+    .qnum{ font-weight:700; color: #d7ddff; }
+    .weight{ font-size: 12px; color: var(--muted); }
+    .prompt{ margin: 8px 0 10px; line-height: 1.35; white-space: pre-wrap; }
+    .opts{ display:grid; gap:8px; margin: 10px 0 0; }
+    label.opt{
+      display:flex; gap:10px; align-items:flex-start;
+      padding:10px 10px; border-radius: 14px;
+      background: rgba(255,255,255,.05);
+      border: 1px solid rgba(255,255,255,.08);
+      cursor:pointer;
+    }
+    label.opt:hover{ border-color: rgba(122,162,255,.55); }
+    input[type="radio"]{ transform: translateY(2px); }
+    input[type="text"], input[type="number"]{
+      width: 100%; padding: 12px 12px; border-radius: 14px;
+      background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.10);
+      color: var(--text); outline:none;
+    }
+    input[type="text"]:focus, input[type="number"]:focus{ border-color: rgba(122,162,255,.8); box-shadow: 0 0 0 3px rgba(122,162,255,.18); }
+
+    .bar{
+      height: 10px; border-radius: 999px; overflow:hidden;
+      background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.10);
+      margin-top: 10px;
+    }
+    .bar > div{ height:100%; width:0%; background: linear-gradient(90deg, rgba(122,162,255,.9), rgba(102,217,169,.85)); transition: width .25s ease; }
+
+    .row{ display:flex; gap: 10px; flex-wrap:wrap; align-items:center; justify-content:space-between; margin-top: 10px; }
+    .btns{ display:flex; gap:10px; flex-wrap:wrap; }
+    button{
+      appearance:none; border:0; border-radius: 14px;
+      padding: 11px 14px; cursor:pointer; font-weight:700;
+      background: rgba(122,162,255,.9); color: #081027;
+      box-shadow: 0 10px 24px rgba(122,162,255,.18);
+    }
+    button.secondary{
+      background: rgba(255,255,255,.08); color: var(--text); font-weight: 600;
+      border: 1px solid rgba(255,255,255,.12); box-shadow: none;
+    }
+    button:disabled{ opacity:.55; cursor:not-allowed; }
+    .note{ color: var(--muted); font-size: 13px; line-height: 1.35; }
+    .result{
+      display:none;
+      margin-top: 14px;
+      border-radius: 18px;
+      padding: 16px 14px;
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.05);
+    }
+    .score{
+      font-size: 22px; font-weight: 800; margin: 0 0 8px;
+    }
+    .tag{
+      display:inline-block; padding: 6px 10px; border-radius: 999px;
+      background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.10);
+      color: var(--muted); font-size: 12px;
+      margin-right: 8px; margin-top: 6px;
+    }
+
+    .review{ margin-top: 12px; display:none; }
+    details{
+      background: rgba(255,255,255,.04);
+      border: 1px solid rgba(255,255,255,.10);
+      border-radius: 16px;
+      padding: 10px 12px;
+      margin-top: 10px;
+    }
+    summary{ cursor:pointer; font-weight: 700; color: #d7ddff; }
+    .ok{ color: var(--ok); }
+    .bad{ color: var(--bad); }
+    .mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+    .tiny{ font-size: 12px; color: var(--muted); }
+
+    @media (min-width: 860px){
+      .grid{ grid-template-columns: 1fr 1fr; }
+      .span2{ grid-column: 1 / -1; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div>
+        <h1>Quiz “QI” — estimation ludique</h1>
+        <p class="sub" style="max-width: 78ch;">
+          Ce test n’est <b>pas</b> un QI officiel : il donne une indication sur ton raisonnement.
+          Réponds sans aide, sans calculatrice.
+        </p>
+      </div>
+      <div class="pill">
+        <span id="timer">⏱️ 00:00</span>
+        <span>•</span>
+        <span id="progressTxt">0 / 17 répondues</span>
+      </div>
+      <div class="bar" style="width:100%"><div id="progressBar"></div></div>
+    </header>
+
+    <div class="card">
+      <div class="row">
+        <div class="note">
+          <b>Conseil :</b> prends 25–30 minutes. <br/>
+          <span class="tiny">Bonus mémoire (#17) : la suite s’affiche une seule fois pendant 5 secondes.</span>
+        </div>
+        <div class="btns">
+          <button class="secondary" id="btnReset">Réinitialiser</button>
+          <button id="btnSubmit">Corriger & afficher le résultat</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="quiz" class="grid" style="margin-top: 12px;"></div>
+
+    <div id="result" class="result">
+      <p class="score" id="scoreLine"></p>
+      <div id="bands"></div>
+      <div style="margin-top:10px" class="note" id="breakdown"></div>
+
+      <div class="row" style="margin-top: 12px;">
+        <div class="note">Tu veux voir les corrections question par question ?</div>
+        <div class="btns">
+          <button class="secondary" id="btnToggleReview">Afficher les corrections</button>
+        </div>
+      </div>
+
+      <div id="review" class="review"></div>
+    </div>
+
+  </div>
+
+<script>
+(() => {
+  const quizEl = document.getElementById("quiz");
+  const progressTxt = document.getElementById("progressTxt");
+  const progressBar = document.getElementById("progressBar");
+  const timerEl = document.getElementById("timer");
+
+  const btnSubmit = document.getElementById("btnSubmit");
+  const btnReset = document.getElementById("btnReset");
+  const resultEl = document.getElementById("result");
+  const scoreLine = document.getElementById("scoreLine");
+  const bandsEl = document.getElementById("bands");
+  const breakdownEl = document.getElementById("breakdown");
+  const reviewEl = document.getElementById("review");
+  const btnToggleReview = document.getElementById("btnToggleReview");
+
+  // ---- Questions ----
+  // id: unique, type: mcq|number|text|memory, weight: points, category for breakdown
+  const questions = [
+    { id:1, section:"A) Logique", category:"Logique", weight:1, type:"mcq",
+      prompt:`Tous les Zorps sont des Blins. Certains Blins sont des Traps.\nConclusion certaine ?`,
+      options:{A:"Certains Zorps sont des Traps",B:"Aucun Zorp n’est un Trap",C:"On ne peut pas conclure",D:"Tous les Traps sont des Blins"},
+      answer:"C",
+      explain:`On sait que Zorps ⊆ Blins, et qu’il existe des Blins qui sont Traps. Mais rien ne dit que ces Traps sont (ou ne sont pas) des Zorps.`
+    },
+    { id:2, section:"A) Logique", category:"Logique", weight:1, type:"mcq",
+      prompt:`Trois interrupteurs A, B, C contrôlent une ampoule dans une autre pièce. Tu peux entrer une seule fois dans la pièce. Comment identifier quel interrupteur allume l’ampoule ?`,
+      options:{A:"Impossible",B:"Allumer A 5 min, l’éteindre, allumer B, entrer",C:"Allumer A et B, entrer",D:"Allumer A 1 sec, entrer"},
+      answer:"B",
+      explain:`Si l’ampoule est allumée → c’est B. Si elle est éteinte mais chaude → c’est A. Sinon (éteinte et froide) → c’est C.`
+    },
+    { id:3, section:"A) Logique", category:"Logique", weight:1, type:"mcq",
+      prompt:`Si “certains X sont Y” est vrai, laquelle est forcément vraie ?`,
+      options:{A:"Tous les X sont Y",B:"Certains Y sont X",C:"Aucun X n’est Y",D:"Tous les Y sont X"},
+      answer:"B",
+      explain:`“Certains X sont Y” implique qu’il existe au moins un élément qui est à la fois X et Y, donc “certains Y sont X” est vrai.`
+    },
+    { id:4, section:"A) Logique", category:"Logique", weight:1, type:"mcq",
+      prompt:`Une phrase est écrite sur un papier :\n“La phrase de l’autre côté est fausse.”\nAu dos :\n“La phrase de l’autre côté est vraie.”\nQue peut-on dire ?`,
+      options:{A:"Les deux sont vraies",B:"Les deux sont fausses",C:"Une seule est vraie mais on ne sait pas laquelle",D:"Paradoxe : impossible sans contradiction"},
+      answer:"D",
+      explain:`Si l’une est vraie, l’autre devient fausse, ce qui rend la première fausse, etc. Aucune attribution vrai/faux ne tient sans contradiction.`
+    },
+
+    { id:5, section:"B) Maths & patterns", category:"Patterns", weight:1, type:"mcq",
+      prompt:`Suite : 2, 6, 12, 20, 30, …`,
+      options:{A:"40",B:"41",C:"42",D:"44"},
+      answer:"C",
+      explain:`Les écarts sont +4, +6, +8, +10… donc ensuite +12 → 30 + 12 = 42.`
+    },
+    { id:6, section:"B) Maths & patterns", category:"Maths", weight:1, type:"mcq",
+      prompt:`3 machines fabriquent 3 pièces en 3 minutes.\nCombien de machines faut-il pour fabriquer 100 pièces en 100 minutes ?`,
+      options:{A:"1",B:"3",C:"33",D:"100"},
+      answer:"B",
+      explain:`3 machines → 3 pièces en 3 min, donc 1 machine fait 1 pièce en 3 min. En 100 min, 1 machine fait 100/3 pièces. Il faut 3 machines pour 100 pièces.`
+    },
+    { id:7, section:"B) Maths & patterns", category:"Maths", weight:1, type:"mcq",
+      prompt:`Résous : x/2 + x/3 = 10`,
+      options:{A:"10",B:"12",C:"15",D:"20"},
+      answer:"B",
+      explain:`(3x + 2x)/6 = 10 → 5x = 60 → x = 12.`
+    },
+    { id:8, section:"B) Maths & patterns", category:"Maths", weight:1, type:"mcq",
+      prompt:`Un article coûte 100€. Il baisse de 20%, puis augmente de 20%. Prix final ?`,
+      options:{A:"96€",B:"100€",C:"104€",D:"120€"},
+      answer:"A",
+      explain:`100 × 0.8 = 80, puis 80 × 1.2 = 96.`
+    },
+    { id:9, section:"B) Maths & patterns", category:"Maths", weight:1, type:"mcq",
+      prompt:`2% des gens sont musiciens. 50% des musiciens sont gauchers.\nOn sait aussi que 10% des gauchers sont musiciens.\nQuel % des gens est gaucher ?`,
+      options:{A:"5%",B:"10%",C:"20%",D:"25%"},
+      answer:"B",
+      explain:`P(M)=0.02. P(L|M)=0.5 → P(M∩L)=0.01. Or P(M|L)=0.10 → 0.01 = 0.10×P(L) → P(L)=0.10.`
+    },
+
+    { id:10, section:"C) Raisonnement verbal", category:"Verbal", weight:1, type:"mcq",
+      prompt:`Trouve l’intrus : Argile – Granit – Basalte – Marbre – Chêne`,
+      options:{A:"Argile",B:"Granit",C:"Marbre",D:"Chêne"},
+      answer:"D",
+      explain:`Les quatre premiers sont des matériaux minéraux/roches ; le chêne est un arbre.`
+    },
+    { id:11, section:"C) Raisonnement verbal", category:"Verbal", weight:1, type:"mcq",
+      prompt:`Analogie : Main : Gant :: Pied : ?`,
+      options:{A:"Chaussette",B:"Casque",C:"Manche",D:"Semelle"},
+      answer:"A",
+      explain:`Gant couvre la main, chaussette couvre le pied.`
+    },
+    { id:12, section:"C) Raisonnement verbal", category:"Verbal", weight:1, type:"mcq",
+      prompt:`Quel mot ne va pas avec les autres ?`,
+      options:{A:"Triangle",B:"Carré",C:"Cercle",D:"Cube"},
+      answer:"D",
+      explain:`Triangle/carré/cercle = 2D. Cube = 3D.`
+    },
+    { id:13, section:"C) Raisonnement verbal", category:"Verbal", weight:1, type:"mcq",
+      prompt:`Si on réarrange les lettres de “R A P E L”, on peut former :`,
+      options:{A:"Perla",B:"Parle",C:"Palre",D:"Réalp"},
+      answer:"B",
+      explain:`“PARLE” utilise toutes les lettres exactement une fois.`
+    },
+
+    { id:14, section:"D) Problèmes “Einstein-style”", category:"Einstein", weight:2, type:"mcq",
+      prompt:`Tu as 12 billes. Une est plus lourde que les autres. Tu as une balance à plateaux et 3 pesées max.\nPeut-on trouver la bille lourde ?`,
+      options:{A:"Non",B:"Oui",C:"Oui, mais seulement si on sait où elle est",D:"Ça dépend du nombre de billes"},
+      answer:"B",
+      explain:`Oui : 3 pesées suffisent (méthode de type “diviser en 3 groupes” + stratégie de décision).`
+    },
+    { id:15, section:"D) Problèmes “Einstein-style”", category:"Einstein", weight:2, type:"mcq",
+      prompt:`Une horloge avance de 5 minutes par heure. À 12:00 elle est correcte.\nÀ quelle heure réelle sera-t-elle à nouveau correcte (horloge 12h) ?`,
+      options:{A:"12:00 le lendemain",B:"12:00 après 6 jours",C:"12:00 après 12 heures",D:"Jamais"},
+      answer:"B",
+      explain:`Elle doit “gagner” 12h = 720 min. À +5 min/h → 720/5 = 144 heures = 6 jours.`
+    },
+    { id:16, section:"D) Problèmes “Einstein-style”", category:"Einstein", weight:2, type:"mcq",
+      prompt:`Un lac est couvert de nénuphars : la surface double chaque jour.\nSi le lac est entièrement couvert au jour 48, à quel jour est-il à moitié couvert ?`,
+      options:{A:"24",B:"47",C:"46",D:"42"},
+      answer:"B",
+      explain:`Si ça double chaque jour, la moitié est atteinte la veille du jour complet → jour 47.`
+    },
+
+    // Bonus mémoire
+    { id:17, section:"E) Mémoire de travail (bonus)", category:"Mémoire", weight:2, type:"memory",
+      prompt:`Lis une seule fois, puis répète à l’envers :`,
+      memorySequence:["7","2","9","4","1","8"],
+      answerText:"8 1 4 9 2 7", // canonical spacing
+      explain:`La suite inversée est : 8 – 1 – 4 – 9 – 2 – 7. (2 pts si parfait, 1 pt si une erreur)`
+    },
+  ];
+
+  // ---- Timer ----
+  let startTime = Date.now();
+  const timer = setInterval(() => {
+    const s = Math.floor((Date.now() - startTime)/1000);
+    const mm = String(Math.floor(s/60)).padStart(2,'0');
+    const ss = String(s%60).padStart(2,'0');
+    timerEl.textContent = `⏱️ ${mm}:${ss}`;
+  }, 250);
+
+  // ---- State ----
+  const state = {
+    answers: loadState() || {},   // { [id]: "A"|"B"|... or text }
+    memoryShown: false,
+    locked: false,
+  };
+
+  function loadState(){
+    try { return JSON.parse(localStorage.getItem("qiQuizState") || "null"); }
+    catch { return null; }
+  }
+  function saveState(){
+    localStorage.setItem("qiQuizState", JSON.stringify(state.answers));
+  }
+
+  // ---- Render ----
+  function render(){
+    quizEl.innerHTML = "";
+    let currentSection = "";
+    questions.forEach(q => {
+      const card = document.createElement("div");
+      card.className = "card";
+      card.dataset.qid = q.id;
+
+      // section header on first card of section
+      if(q.section !== currentSection){
+        currentSection = q.section;
+        const h2 = document.createElement("h2");
+        h2.textContent = currentSection;
+        card.appendChild(h2);
+      }
+
+      const head = document.createElement("div");
+      head.className = "qhead";
+      head.innerHTML = `<div class="qnum">Question ${q.id}</div><div class="weight">${q.weight} pt${q.weight>1?"s":""}</div>`;
+      card.appendChild(head);
+
+      const p = document.createElement("div");
+      p.className = "prompt";
+      p.textContent = q.prompt;
+      card.appendChild(p);
+
+      if(q.type === "mcq"){
+        const opts = document.createElement("div");
+        opts.className = "opts";
+        Object.entries(q.options).forEach(([key,label]) => {
+          const id = `q${q.id}_${key}`;
+          const lab = document.createElement("label");
+          lab.className = "opt";
+          lab.innerHTML = `
+            <input type="radio" name="q${q.id}" id="${id}" value="${key}" />
+            <div><b>${key})</b> ${label}</div>
+          `;
+          const input = lab.querySelector("input");
+          input.checked = (state.answers[q.id] === key);
+          input.addEventListener("change", () => {
+            state.answers[q.id] = key;
+            saveState();
+            updateProgress();
+          });
+          opts.appendChild(lab);
+        });
+        card.appendChild(opts);
+      }
+
+      if(q.type === "number"){
+        const input = document.createElement("input");
+        input.type = "number";
+        input.step = "any";
+        input.placeholder = "Ta réponse…";
+        input.value = state.answers[q.id] ?? "";
+        input.addEventListener("input", () => {
+          state.answers[q.id] = input.value;
+          saveState();
+          updateProgress();
+        });
+        card.appendChild(input);
+      }
+
+      if(q.type === "text"){
+        const input = document.createElement("input");
+        input.type = "text";
+        input.placeholder = "Ta réponse…";
+        input.value = state.answers[q.id] ?? "";
+        input.addEventListener("input", () => {
+          state.answers[q.id] = input.value;
+          saveState();
+          updateProgress();
+        });
+        card.appendChild(input);
+      }
+
+      if(q.type === "memory"){
+        const box = document.createElement("div");
+        box.innerHTML = `
+          <div class="note" style="margin-bottom:10px;">
+            <span class="tiny">Clique sur “Afficher 5s”, mémorise, puis saisis la suite à l’envers.</span>
+          </div>
+          <div class="row">
+            <div class="pill mono" id="memSeq" style="user-select:none; opacity:.95;">•• •• •• •• •• ••</div>
+            <div class="btns">
+              <button class="secondary" id="memBtn">Afficher 5s</button>
+            </div>
+          </div>
+        `;
+        card.appendChild(box);
+
+        const memSeqEl = box.querySelector("#memSeq");
+        const memBtn = box.querySelector("#memBtn");
+
+        // input
+        const input = document.createElement("input");
+        input.type = "text";
+        input.placeholder = "Exemple : 8 1 4 9 2 7";
+        input.value = state.answers[q.id] ?? "";
+        input.addEventListener("input", () => {
+          state.answers[q.id] = input.value;
+          saveState();
+          updateProgress();
+        });
+        card.appendChild(document.createElement("div")).style.height = "8px";
+        card.appendChild(input);
+
+        memBtn.addEventListener("click", () => {
+          if(state.memoryShown) return;
+          state.memoryShown = true;
+          memBtn.disabled = true;
+          memBtn.textContent = "Affiché";
+          memSeqEl.textContent = q.memorySequence.join(" – ");
+          setTimeout(() => {
+            memSeqEl.textContent = "•• •• •• •• •• ••";
+          }, 5000);
+        });
+      }
+
+      quizEl.appendChild(card);
+    });
+
+    updateProgress();
+  }
+
+  function updateProgress(){
+    const answered = questions.filter(q => {
+      const a = (state.answers[q.id] ?? "").toString().trim();
+      return a.length > 0;
+    }).length;
+
+    progressTxt.textContent = `${answered} / ${questions.length} répondues`;
+    const pct = Math.round((answered / questions.length) * 100);
+    progressBar.style.width = `${pct}%`;
+  }
+
+  // ---- Scoring ----
+  function normalizeSpaces(s){
+    return s.trim().replace(/\s+/g, " ");
+  }
+
+  function score(){
+    let total = 0;
+    let max = 0;
+
+    const perCat = {}; // {cat:{score,max}}
+    const details = [];
+
+    questions.forEach(q => {
+      max += q.weight;
+      if(!perCat[q.category]) perCat[q.category] = {score:0, max:0};
+      perCat[q.category].max += q.weight;
+
+      const raw = (state.answers[q.id] ?? "").toString().trim();
+      let pts = 0;
+
+      if(q.type === "mcq"){
+        if(raw === q.answer) pts = q.weight;
+      } else if(q.type === "number"){
+        const v = Number(raw);
+        if(Number.isFinite(v) && v === Number(q.answer)) pts = q.weight;
+      } else if(q.type === "text"){
+        if(normalizeSpaces(raw).toLowerCase() === normalizeSpaces(String(q.answer)).toLowerCase()) pts = q.weight;
+      } else if(q.type === "memory"){
+        // 2 points if perfect, 1 point if one token wrong
+        const target = q.answerText.split(" ");
+        const user = normalizeSpaces(raw).split(" ").filter(Boolean);
+
+        if(user.length === target.length){
+          let wrong = 0;
+          for(let i=0;i<target.length;i++){
+            if(user[i] !== target[i]) wrong++;
+          }
+          if(wrong === 0) pts = 2;
+          else if(wrong === 1) pts = 1;
+          else pts = 0;
+        } else {
+          pts = 0;
+        }
+      }
+
+      total += pts;
+      perCat[q.category].score += pts;
+
+      details.push({ q, raw, pts });
+    });
+
+    return { total, max, perCat, details };
+  }
+
+  function bandText(total, max){
+    // Purement indicatif (pas un QI officiel)
+    const ratio = total / max;
+    if(ratio >= 0.90) return "Très haut (raisonnement très solide) — indicatif";
+    if(ratio >= 0.75) return "Au-dessus de la moyenne — indicatif";
+    if(ratio >= 0.55) return "Dans la moyenne — indicatif";
+    return "À travailler (ou test fait trop vite) — indicatif";
+  }
+
+  function renderResult(){
+    const { total, max, perCat, details } = score();
+
+    resultEl.style.display = "block";
+    scoreLine.textContent = `Score : ${total} / ${max} points`;
+
+    bandsEl.innerHTML = `
+      <span class="tag">Interprétation : ${bandText(total, max)}</span>
+      <span class="tag">Durée : ${timerEl.textContent.replace("⏱️ ","")}</span>
+      <span class="tag">Non-officiel (jeu de logique)</span>
+    `;
+
+    // Breakdown
+    const rows = Object.entries(perCat)
+      .map(([cat, o]) => `${cat} : <b>${o.score}</b> / ${o.max}`)
+      .join(" • ");
+    breakdownEl.innerHTML = `Détail par catégorie — ${rows}.`;
+
+    // Review
+    reviewEl.innerHTML = "";
+    details.forEach(({q, raw, pts}) => {
+      const isOK = pts === q.weight || (q.type==="memory" && pts>0);
+      const your = raw ? `<span class="mono">${escapeHtml(raw)}</span>` : `<span class="tiny">(sans réponse)</span>`;
+      const correct = q.type==="memory" ? q.answerText : q.answer;
+
+      const det = document.createElement("details");
+      det.innerHTML = `
+        <summary>Q${q.id} — <span class="${isOK ? "ok" : "bad"}">${isOK ? "OK" : "Faux"}</span> <span class="tiny">(${pts}/${q.weight} pt)</span></summary>
+        <div class="tiny" style="margin-top:8px;">${escapeHtml(q.section)} • ${escapeHtml(q.category)}</div>
+        <div class="prompt" style="margin-top:10px;">${escapeHtml(q.prompt)}</div>
+        <div class="note"><b>Ta réponse :</b> ${your}</div>
+        <div class="note"><b>Réponse attendue :</b> <span class="mono">${escapeHtml(String(correct))}</span></div>
+        <div class="note" style="margin-top:8px;"><b>Explication :</b> ${escapeHtml(q.explain)}</div>
+      `;
+      reviewEl.appendChild(det);
+    });
+
+    btnToggleReview.textContent = "Afficher les corrections";
+    reviewEl.style.display = "none";
+
+    // scroll to result
+    resultEl.scrollIntoView({ behavior:"smooth", block:"start" });
+  }
+
+  function escapeHtml(s){
+    return String(s)
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#039;");
+  }
+
+  // ---- Events ----
+  btnSubmit.addEventListener("click", () => {
+    renderResult();
+  });
+
+  btnToggleReview.addEventListener("click", () => {
+    const open = reviewEl.style.display !== "none";
+    reviewEl.style.display = open ? "none" : "block";
+    btnToggleReview.textContent = open ? "Afficher les corrections" : "Masquer les corrections";
+    if(!open) reviewEl.scrollIntoView({ behavior:"smooth", block:"start" });
+  });
+
+  btnReset.addEventListener("click", () => {
+    if(!confirm("Réinitialiser toutes les réponses ?")) return;
+    state.answers = {};
+    state.memoryShown = false;
+    localStorage.removeItem("qiQuizState");
+    startTime = Date.now();
+    resultEl.style.display = "none";
+    render();
+    window.scrollTo({ top: 0, behavior:"smooth" });
+  });
+
+  // Render initial
+  render();
+})();
+</script>
+</body>
+</html>
